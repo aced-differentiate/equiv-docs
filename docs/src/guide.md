@@ -26,7 +26,11 @@ Op
 
 ## Lower level utilities
 
+### Convolutions
+
+Feature rich convolution and cross correlation functions with options for padding, stride, boundary conditions, and custom products (tensor field convolutions).
+
 ```@docs
-xcor
-conv
+cvconv
+dspconv
 ```

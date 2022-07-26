@@ -1,8 +1,9 @@
 using Functors
 using UnPack
+using StaticArrays
 
 function harmonics(r::AbstractArray{T},l) where T<:Complex
-@. θ=l*angle(r)
+ θ=l*angle.(r)
     @. complex(cos(θ),sin(θ))
 end
 function harmonics(r::AbstractArray,l)
@@ -53,11 +54,11 @@ function Grid(
     cell::AbstractMatrix,
     sz::Union{AbstractVector,Tuple};
     origin = (sz .+ 1) ./ 2,
-    T=Array
+    T=SVector
 )
     n = size(cell, 1)
         rvecs = [
-T(            (cell * collect(a .- origin)))
+T(            (cell * collect(a .- origin))...)
             for a in Iterators.product([1:a for a in sz]...)
         ]
     R = norm.(rvecs)

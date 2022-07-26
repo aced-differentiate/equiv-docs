@@ -20,6 +20,8 @@ rmax = 1.0
 grid = Grid(cell, rmax)
 sz = size(grid)
 ▽ = Op(:▽, cell)
+# laplacian
+△ = Op(:△, cell)
 blur=Op(:Gaussian,cell;σ=.1)
 
 # diffusion advection with point emitter
@@ -30,7 +32,7 @@ u0 = zeros(sz)
 s = zeros(sz)
 put!(s, grid, [0.0, 0.0], 1.)
 s=blur(s)
-f(u, p, t) = D * (▽ ⋅ ▽(u)) - v .⋅ ▽(u).+s*k
+f(u, p, t) = D * (△(u)) - v .⋅ ▽(u).+s*k
 
 # simulate PDE
 using DifferentialEquations
@@ -48,7 +50,7 @@ for t in t
 heatmap(sol(t)[:, :, 1], clim=(0,10))
 frame(anim)
 end
-gif(anim, "f.gif", fps = 10)
+# gif(anim, "f.gif", fps = 10)
 
 ##
 data = [(sol(t), f(sol(t), 0, 0)) for t in t]
@@ -60,7 +62,7 @@ ps = Flux.params(p_)
 function loss(u, du)
     D,vx,vy,k=p_
     v = fill([vx,vy],sz)
-    duhat= D * (▽ ⋅ ▽(u)) - v .⋅ ▽(u).+s*k
+    duhat= D * (△(u)) - v .⋅ ▽(u).+s*k
     @show l = nae(duhat, du)
 end
 

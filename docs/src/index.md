@@ -20,8 +20,7 @@ Paper outdated - releasing a new version soon
 
 ## Contributors
 
-Paul Shen (xingpins@andrew.cmu.edu), Michael Herbst (herbst@acom.rwth-aachen.de), Venkat Viswanathan (venkatv@andrew.cmu.edu)
-
-In consultation with Rachel Kurchin, Dhairya Gandhi, Chris Rackauckas
+Lead developer: Paul Shen (xingpins@andrew.cmu.edu), Michael Herbst (herbst@acom.rwth-aachen.de)
+PI: Venkat Viswanathan (venkatv@andrew.cmu.edu)
 
 In collaboration with Julia Computing
