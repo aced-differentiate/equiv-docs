@@ -1,6 +1,6 @@
 using Random
 using Functors
-using Zygote
+# using Zygote
 
 include("grid.jl")
 include("conv.jl")
