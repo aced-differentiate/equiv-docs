@@ -20,9 +20,10 @@ grid = Grid(cell, rmax)
 
 # make operators
 rmin = 1e-9
-ϕ = Op(r -> 1 / (4π * r), rmin, rmax, cell)
-E = Op(r -> 1 / (4π * r^2), rmin, rmax, cell; l = 1)
-▽ = Op(:▽, cell)
+pad=:same
+ϕ = Op(r -> 1 / (4π * r),  rmax, cell;rmin,pad)
+E = Op(r -> 1 / (4π * r^2),  rmax, cell;rmin, pad,l = 1)
+▽ = Del(cell)
 
 # put dipole charges
 ρf = zeros(size(grid))
@@ -38,16 +39,12 @@ rvec = [0, 0]
 @show get(ϕf, grid, rvec), [0.0]
 @show get(Ef, grid, rvec), get(-▽(ϕf), grid, rvec), [-2 / (4π * 0.5^2), 0]
 
-p = []
-push!(p, heatmap(ρf',title = "dipole charge"), )
-push!(p, heatmap(ϕf', title = "dipole potential"),)
-plot(p..., layout = length(p))
-vfplot(Ef,grid; title = "dipole electric field")
 
 ##
 # make neural operators
-ϕ_ = Op(Radfunc(), rmin, rmax, cell)
-E_ = Op(Radfunc(), rmin, rmax, cell; l = 1)
+nbasis=32
+ϕ_ = Op(Radfunc(nbasis),  rmax, cell;rmin,pad)
+E_ = Op(Radfunc(nbasis),  rmax, cell; rmin,l = 1,pad)
 
 ps = Flux.params(ϕ_, E_)
 function loss()
@@ -62,16 +59,23 @@ end
 data = [()]
 loss()
 opt = ADAM(0.1)
-Flux.@epochs 10 Flux.train!(loss, ps, data, opt)
+Flux.@epochs 50 Flux.train!(loss, ps, data, opt)
 
 ## plot
-p = []
-push!(p, heatmap(ϕ_.kernel, title = "learned potential kernel"))
-r = 0:0.01:1
-push!(
-    p,
-    plot(r, ϕ_.radfunc.(r), title = "learned potential kernel radial function"),
-)
-plot(p..., layout = length(p))
+r=0:.02:1
 
-vfplot(E_.kernel,grid; title = "learned E field kernel ")
+layout = @layout [
+    # a{0.4h}
+    Plots.grid(1,3)
+    Plots.grid(2,2)
+]
+plot(
+heatmap(ρf',title = "dipole charge"),
+heatmap(ϕf', title = "dipole potential"),
+vector_field_plot(.1Ef,grid; title = "dipole electric field"),
+  heatmap(ϕ_.kernel, title = "learned potential kernel"),
+plot(r, ϕ_.radfunc.(r), title = "learned potential kernel radial function"),
+vector_field_plot(1E_.kernel,grid; title = "learned electric field kernel "),
+plot(r, E_.radfunc.(r), title = "learned electric field radial function");
+  layout)
+##

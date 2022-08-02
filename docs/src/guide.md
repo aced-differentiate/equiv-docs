@@ -18,10 +18,13 @@ Grid
 get(::AbstractArray, ::Grid, ::AbstractVector)
 ```
 
-## Finite difference operators
+## Finite difference equivariant operators
 
 ```@docs
 Op
+Del
+Laplacian
+Gaussian
 ```
 
 ## Lower level utilities

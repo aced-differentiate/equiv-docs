@@ -2,7 +2,7 @@
 # using CairoMakie
 using Plots
 
-function vfplot(v,g;kwargs...)
+function vector_field_plot(v,g;kwargs...)
 x=g.x
 y=g.y
 u =getindex.(v,1)

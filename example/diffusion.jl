@@ -5,7 +5,6 @@ simulation & machine learning of diffusion advection PDE
 using IterTools
 using Plots
 using Random
-using Flux
 using LinearAlgebra
 Random.seed!(1)
 include("../src/operators.jl")
@@ -19,10 +18,10 @@ cell = dx * Matrix(I, n, n)
 rmax = 1.0
 grid = Grid(cell, rmax)
 sz = size(grid)
-▽ = Op(:▽, cell)
+▽ = Del(cell)
+△ = Laplacian(cell)
 # laplacian
-△ = Op(:△, cell)
-blur=Op(:Gaussian,cell;σ=.1)
+# blur=Op(:Gaussian,cell;σ=.1)
 
 # diffusion advection with point emitter
 p = [0.2,0.5, 0.5,.8]
@@ -31,14 +30,14 @@ v = fill([vx,vy],sz)
 u0 = zeros(sz)
 s = zeros(sz)
 put!(s, grid, [0.0, 0.0], 1.)
-s=blur(s)
+# s=blur(s)
 f(u, p, t) = D * (△(u)) - v .⋅ ▽(u).+s*k
 
 # simulate PDE
 using DifferentialEquations
 tspan = (0.0, 1.0)
 prob = ODEProblem(f, u0, tspan)
-sol = solve(prob, Tsit5(), reltol = 1e-3, abstol = 1e-3)
+sol = DifferentialEquations.solve(prob, Tsit5(), reltol = 1e-3, abstol = 1e-3)
 
 # plot
 using Plots
@@ -50,10 +49,10 @@ for t in t
 heatmap(sol(t)[:, :, 1], clim=(0,10))
 frame(anim)
 end
-# gif(anim, "f.gif", fps = 10)
+gif(anim, "f.gif", fps = 10)
 
 ##
-data = [(sol(t), f(sol(t), 0, 0)) for t in t]
+data = [(sol(t), f(sol(t), 0, 0)) for t in LinRange(0,1,10)]
 # op = Op(Radfunc(),-1e-6, 2dx, cell)
 # ps=Flux.params(op)
 p_ = ones(length(p))
@@ -73,3 +72,26 @@ Flux.@epochs 2 Flux.train!(loss, ps, data, opt)
 
 @show p,p_
 # (p, p_) = ([0.2, 0.5, 0.5, 0.8], [0.2113613015968995, 0.4977070976688276, 0.4977070976688435, 0.791498663145966])
+
+# # loss(data[1]...)
+#
+# using GalacticOptim,Optim
+# using OptimizationOptimJL
+# # using OptimizationOptimisers
+#
+# function loss(p,_)
+#     u, du=data[1]
+#     D,vx,vy,k=p
+#     v = fill([vx,vy],sz)
+#     duhat= D * (△(u)) - v .⋅ ▽(u).+s*k
+#     @show l = nae(duhat, du)
+# end
+#
+# opt = Optim.BFGS()
+# # opt = Adam()
+# l = OptimizationFunction(loss, GalacticOptim.AutoForwardDiff())
+# prob = OptimizationProblem(l, p_, data)
+# sol = GalacticOptim.solve(prob, opt, maxiters = 10)
+#
+# @show p,p_
+# # (p, p_) = ([0.2, 0.5, 0.5, 0.8], [0.2113613015968995, 0.4977070976688276, 0.4977070976688435, 0.791498663145966])

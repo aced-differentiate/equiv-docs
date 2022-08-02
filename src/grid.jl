@@ -64,6 +64,7 @@ T(            (cell * collect(a .- origin))...)
     R = norm.(rvecs)
     Y =[ rvecs ./ (R .+ 1e-16)]
     dv = det(cell)
+    cell=SMatrix{n,n}(cell)
     Grid(cell, origin, rvecs, Y, R, dv)
 end
 

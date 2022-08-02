@@ -53,16 +53,21 @@ end
 `f` filter array
 `product` product in convolution, eg `*`, `dot`
 `pad` amount of padding or padding option
-- any integer:
+- any integer number of pixels on each boundary
 - `:same`: adds enough padding so output is same size as input
 - `:outer`: output size is `size(x) .+ size(f) .- 1`
 `border` type of padding
-- 0
+- `0` value pixels
 - `:replicate` repeats edge values
 - `:circular` periodic BC
 - `:smooth` continuous derivatives at boundaries useful for differential operators
 - `:reflect` reflects interior across boundaries which are not repeated
 - `:symmetric` same as `:reflect` but with boundaries repeated
+
+Convolutions in other Julia packages, fewer features but perhaps more optimized for speed in their specific use cases
+- [ImageFiltering.imfilter](https://juliaimages.org/stable/function_reference/#ImageFiltering.imfilter). Its docs has excellent mathematical explaination of convolutions and correlation as well as padding/border options
+- `DSP.conv` `DSP.xcor`
+- `Flux.conv`
 """
 function cvconv(x, f; product = *, stride = 1, pad = 0, border = 0)
     if pad == :outer
@@ -84,7 +89,7 @@ function cvconv(x, f; product = *, stride = 1, pad = 0, border = 0)
         # if border==:circular
         x = parent(padarray(x, Pad(border, pad...)))
         l = Iterators.product([
-            1:stride:b for b in size(x) .- size(f) .+ 1 .+ pad
+            1:stride:b for b in size(x) .- size(f) .+ 1
         ]...)
         return [
             sum(product.(
