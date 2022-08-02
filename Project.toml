@@ -15,9 +15,9 @@ StaticArrays="90137ffa-7385-5640-81b9-e52037218182"
 [compat]
 julia = [1.7,5]        # [3.0.0, ∞), no upper bound (bad)
 # DSP = "0.7.5"
-Flux = [0.13.1,5]
-Functors = [0.2.8,5]
-UnPack = [1.0.2,5] # Zygote = "0.6.40"
-Plots=[1.0,5]
-ImageFiltering=[0.7.1,5]
-StaticArrays=[1,5]
+# Flux = [0.13.1,5]
+# Functors = [0.2.8,5]
+# UnPack = [1.0.2,5] # Zygote = "0.6.40"
+# Plots=[1.0,5]
+# ImageFiltering=[0.7.1,5]
+# StaticArrays=[1,5]
