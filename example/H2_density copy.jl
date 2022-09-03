@@ -7,6 +7,7 @@ using Flux
 using Zygote
 # using Enzyme
 using BlackBoxOptim
+using Images
 
 using FileIO
 using Plots
@@ -23,63 +24,79 @@ natoms = length(charges)
 @show dx = case.resolution
 # @show origin = case.origin
 @show origin = ones(3)
-ρe =-abs.( case.density)
+ρe = -abs.(case.density)
+
+s = 4
+# ρp=ρp[1:s:end,1:s:end,1:s:end]
+# ρe=ρe[1:s:end,1:s:end,1:s:end]
+ρe = imresize(ρe, ratio=1 / s)
+dx *= s
+
 sz = size(ρe)
-cell=dx*Matrix(I,3,3)
+cell = dx * Matrix(I, 3, 3)
 grid = Grid(cell, sz; origin)
 @unpack dv = grid
 
 C = sum(ρe) * dv
-@assert C ≈ -sum(charges)
+@show C, -sum(charges)
 
-ρp=zeros(sz)
-put!(ρp,grid,positions,charges)
+ρp = zeros(sz)
+put!(ρp, grid, positions, charges)
 
-# ρp=ρe=rand(4,4,4)
-
-function normρe(ρe,C)
-    ρe=-abs.(ρe)
-    ρe=-abs(ρe/sum(ρe)*C)
+function normρe(ρe, dv, C)
+    ρe = -abs.(ρe)
+    ρe = ρe / sum(ρe) / dv * C
 end
 
-p=[.1,0]
+p = ones(2)
+ps = Params(p)
 
-rmin=1e-6
-rmax=2.
-pad=:same
-ϕ = Op(r->  1/(4π*r), rmax,cell;rmin,pad)
-E = Op(r->  1/(4π*r^2),rmax,cell;rmin,pad,l=1)
-function H(ρe::AbstractArray,ρp::AbstractArray,p)
-    c1,c2=p
-    ϕe=ϕ(ρe)
+rmin = 1e-6
+rmax = 2.0
+pad = :same
+ϕ = Op(r -> 1 / (4π * r), rmax, cell; rmin, pad)
+E = Op(r -> 1 / (4π * r^2), rmax, cell; rmin, pad, l=1)
+function H(ρe::AbstractArray, ρp::AbstractArray, p)
+    ρe = normρe(ρe, dv, C)
+    c1, c2 = p
+    ϕe = ϕ(ρe)
     ϕp = ϕ(ρp)
-    
-    @show    Ve=ϕe⋅ρe/2
-    @show    Vp=ϕp⋅ρe
-    @show    K=abs(c1)*sum(abs.(ρe).^(1+abs(c2)))
-    
-    Ve+Vp+K
+
+    Ve = ϕe ⋅ ρe / 2 * dv
+     Vp = ϕp ⋅ ρe * dv
+     K = abs(c1) * sum(abs.(ρe) .^ (1 + abs(c2))) * dv
+
+    @show Ve, Vp, K
+    @show Ve + Vp + K
 end
 
-ρe_=zeros(size(ρe))
-p_=zeros(size(p))
+ρe_ = zeros(size(ρe))
+p_ = zeros(size(p))
 
-@show H(ρe,ρp,p)
-ps=Params(ρe)
-function loss(ρe,ρp,p)
-    ρe=normρe(ρe,C)
+@show H(ρe, ρp, p)
+function loss(ρe, ρp, p)
 
     # autodiff(x->H(x,ρp,p),Duplicated(ρe,ρe_))
     # l=sum(abs,ρe_)
-    
-    # l=sum(abs,gradient(H,ps)[1])*dv
-    l=sum(abs,gradient(x::AbstractArray->H(x,ρp,p),ρe)[1])
+
+    l = sum(abs, gradient(x -> H(x, ρp, p), ρe)[1]) / abs(C)
 end
 
-@show loss(ρe,ρp,p)
+@show loss(ρe, ρp, p)
 # autodiff(x->loss(ρe,ρp,x),Duplicated(p,p_))
 # @show gradient(x->loss(ρe,ρp,x),p)[1]
 
-res=bboptimize(p->loss(ρe,ρp,p),p; SearchRange = [(0,2), (0,2)])
-@show best_fitness(res) 
-@show best_candidate(res))
+# plot(ρp)
+plot(-ρe)
+res = bboptimize(p -> loss(ρe, ρp, p), p; SearchRange=[(0, 2), (0, 2)], MaxFuncEvals=60, TraceMode=:verbose)
+@show best_fitness(res)
+@show p = best_candidate(res)
+@show loss(ρe, ρp, p)
+
+ρe0 = copy(ρe)
+data = [()]
+opt = ADAM(0.1)
+ps = Flux.params(ρe)
+Flux.@epochs 50 Flux.train!(() -> H(ρe, ρp, p), ps, data, opt)
+ρe = normρe(ρe, dv, C)
+@show nae(ρe, ρe0)

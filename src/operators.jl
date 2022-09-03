@@ -20,7 +20,7 @@ end
 @functor Op
 Flux.trainable(m::Op) = [m.radfunc]
 
-function makekernel(radfunc, rmin, rmax, l, grid)
+function makekernel(radfunc, rmin, rmax, l, grid;)
     @unpack cell, Y, R, dv, r = grid
     n = size(cell, 1)
     f = r -> rmin <= r <= rmax ? radfunc(r) : 0.0
@@ -41,14 +41,17 @@ end
 
 constructs equivariant operator
 """
-function Op(radfunc, rmax, cell::Matrix; kw...)
+function Op(radfunc, rmax, cell::Matrix; cutoff=true,kw...)
     grid = Grid(cell, rmax)
-    Op(radfunc, rmax, grid; kw...)
+    if !cutoff
+        rmax=Inf
+    end
+    Op(radfunc,  grid; rmax,kw...)
 end
 function Op(
     radfunc,
-    rmax,
     grid::Grid;
+    rmax=Inf,
     l = 0,
     convfunc = dspconv,
     rmin = 0.0,
@@ -103,14 +106,14 @@ function Del(cell; pad = :same, border = :smooth)
     rmax = Inf
     # @show border == :smooth
     if border == :smooth
-         function f1(x,f)
-         r=dspconv(x, f; pad=0)
+         function f1(x,f;product=*)
+         r=dspconv(x, f; pad=0,product)
          ix=[Int.([1, (1:a)..., a]) for a in size(r)]
             r = r[ix...]
         end
         return Op(l, kernel, grid, f1, radfunc, rmin, rmax)
     else
-        convfunc_= (x,f)->dspconv(x, f; pad, border)
+        convfunc_= (x,f;product=*)->dspconv(x, f; pad, border,product)
         return Op(l, kernel, grid, convfunc_, radfunc, rmin, rmax)
     end
 end
@@ -119,6 +122,10 @@ end
     Laplacian(cell; pad = :same, border = :smooth)
 
 constructs Laplacian operator
+
+# Examples
+```
+```
 """
 function Laplacian(cell; pad = :same, border = :smooth)
     l = 0

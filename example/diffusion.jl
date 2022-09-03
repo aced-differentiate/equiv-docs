@@ -24,14 +24,14 @@ sz = size(grid)
 # blur=Op(:Gaussian,cell;σ=.1)
 
 # diffusion advection with point emitter
-p = [0.2,0.5, 0.5,.8]
-D,vx,vy,k=p
-v = fill([vx,vy],sz)
+p = [0.2, 0.5, 0.5, 0.8]
+D, vx, vy, k = p
+v = fill([vx, vy], sz)
 u0 = zeros(sz)
 s = zeros(sz)
-put!(s, grid, [0.0, 0.0], 1.)
+put!(s, grid, [0.0, 0.0], 1.0)
 # s=blur(s)
-f(u, p, t) = D * (△(u)) - v .⋅ ▽(u).+s*k
+f(u, p, t) = D * (△(u)) - v .· ▽(u) .+ s * k
 
 # simulate PDE
 using DifferentialEquations
@@ -46,22 +46,22 @@ anim = Animation()
 
 t = 0:0.02:1
 for t in t
-heatmap(sol(t)[:, :, 1], clim=(0,10))
-frame(anim)
+    heatmap(sol(t)[:, :, 1], clim = (0, 10))
+    frame(anim)
 end
 gif(anim, "f.gif", fps = 10)
 
 ##
-data = [(sol(t), f(sol(t), 0, 0)) for t in LinRange(0,1,10)]
+data = [(sol(t), f(sol(t), 0, 0)) for t in LinRange(0, 1, 10)]
 # op = Op(Radfunc(),-1e-6, 2dx, cell)
 # ps=Flux.params(op)
 p_ = ones(length(p))
 ps = Flux.params(p_)
 
 function loss(u, du)
-    D,vx,vy,k=p_
-    v = fill([vx,vy],sz)
-    duhat= D * (△(u)) - v .⋅ ▽(u).+s*k
+    D, vx, vy, k = p_
+    v = fill([vx, vy], sz)
+    duhat = D * (△(u)) - v .· ▽(u) .+ s * k
     @show l = nae(duhat, du)
 end
 
@@ -69,8 +69,7 @@ loss(data[1]...)
 opt = ADAM(0.1)
 
 Flux.@epochs 2 Flux.train!(loss, ps, data, opt)
-
-@show p,p_
+@show p, p_
 # (p, p_) = ([0.2, 0.5, 0.5, 0.8], [0.2113613015968995, 0.4977070976688276, 0.4977070976688435, 0.791498663145966])
 
 # # loss(data[1]...)

@@ -44,6 +44,41 @@ function tp(x, f, l, p)
         f[[a:b for (a, b) in zip(fl, fr)]...],
     ))
 end
+using FFTW
+using StaticArrays
+function fftconv_(x, y; product=*)
+    sz = size(x) .+ size(y) .- 1
+    u = zeros(eltype(x[1]), sz)
+    v = zeros(eltype(y[1]), sz)
+    u[[1:size(x, i) for i = ndims(x)]...] .= x
+    v[[1:size(y, i) for i = ndims(y)]...] .= y
+    x = u
+    y = v
+
+    X = fft.([getindex.(x, i) for i in eachindex(x[1])])
+    X = length(X[1][1]) == 1 ? X[1] : SVector.(X...)
+    Y = fft.([getindex.(y, i) for i in eachindex(y[1])])
+    Y = length(Y[1][1]) == 1 ? Y[1] : SVector.(Y...)
+    Z = product.(X, Y)
+
+
+    r = real.(ifft.([getindex.(Z, i) for i in eachindex(Z[1])]))
+    if length(r[1][1]) == 1
+        return r[1]
+    end
+    return SVector.(r...)
+    # ifft()
+end
+function fftconv(x, y; product=*, pad=:outer, border=0)
+    r = fftconv_(x, y; product)
+    if pad == :outer && border == 0
+        return r
+    elseif pad == :same && border == 0
+        return r[[Int(a):Int(b + a - 1) for (a, b) in zip(size(f), size(x))]...]
+    end
+    @error "unsupported boundary condition for fft conv"
+end
+
 """
     cvconv(x, f; product = *, stride = 1, pad = 0)
 
@@ -69,7 +104,11 @@ Convolutions in other Julia packages, fewer features but perhaps more optimized 
 - `DSP.conv` `DSP.xcor`
 - `Flux.conv`
 """
-function cvconv(x, f; product = *, stride = 1, pad = 0, border = 0)
+function cvconv(x, f; product=*, stride=1, pad=0, border=0, alg=nothing)
+    if alg == :fft
+        return fftconv(x, reverse(f); product, pad, border)
+
+    end
     if pad == :outer
         pad = size(f) .- 1
     elseif pad == :same
@@ -84,32 +123,45 @@ function cvconv(x, f; product = *, stride = 1, pad = 0, border = 0)
             (a, b) in
             zip(ones(Int, ndims(x)) .- pad, size(x) .- size(f) .+ 1 .+ pad)
         ]...)
-        return [tp(x, f, l, product) for l in l]
+        # return [tp(x, f, l, product) for l in l]
+        return map(l -> tp(x, f, l, product), l)
     else
         # if border==:circular
         x = parent(padarray(x, Pad(border, pad...)))
         l = Iterators.product([
             1:stride:b for b in size(x) .- size(f) .+ 1
         ]...)
-        return [
-            sum(product.(
+        return map(
+            l -> sum(product.(
                 x[[a:b for (a, b) in zip(l, l .+ size(f) .- 1)]...],
                 f,
-            )) for l in l
-        ]
+            )), l
+        )
+        # return [
+        #     sum(product.(
+        #         x[[a:b for (a, b) in zip(l, l .+ size(f) .- 1)]...],
+        #         f,
+        #     )) for l in l
+        # ]
 
     end
 end
 
-function cvconv(x::AbstractArray{T}, f::AbstractArray{T}; kw...) where T<:Complex
-    cvconv(x,f;product=(x,y)->x*conj(y),kw...)
+# @show fftconv([1,2],[1,1,1])
+
+function cvconv(x::AbstractArray{T}, f::AbstractArray{T}; kw...) where {T<:Complex}
+    cvconv(x, f; product=(x, y) -> x * conj(y), kw...)
 end
 """
     dspconv(x, f; product = *,pad = :outer,border=0)
 
 Convolution in signal processing. For "convolution" in computer vision, use cvconv instead. By default output size is `size(x) .+ size(f) .- 1`. See `cvconv` for its keyword options which also apply here
 """
-function dspconv(x, f; product = *, pad = :outer, border = 0)
+function dspconv(x, f; product=*, pad=:outer, border=0, alg=nothing)
+    if alg == :fft
+        return fftconv(x, f; product, pad, border)
+
+    end
     cvconv(x, reverse(f); product, pad, border)
 end
 # function Δ(x, y)

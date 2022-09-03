@@ -68,7 +68,7 @@ T(            (cell * collect(a .- origin))...)
     Grid(cell, origin, rvecs, Y, R, dv)
 end
 
-function Grid(cell, rmax::AbstractFloat)
+function Grid(cell, rmax::Real)
     n = size(cell, 1)
     Grid(cell, 1 .+ 2 * ceil.(rmax * (cell \ ones(n))))
 end
@@ -171,8 +171,8 @@ function Base.put!(field::AbstractArray, grid::Grid, rvec::AbstractVector, val)
     end
 end
 
-function Base.put!(f, grid, rvecs::AbstractMatrix, vals::AbstractMatrix)
-    for (val, rvec) in zip(eachcol(vals), eachcol(rvecs))
+function Base.put!(f, grid, rvecs::AbstractMatrix, vals)
+    for (val, rvec) in zip(vals, eachcol(rvecs))
         put!(f, grid, rvec, val)
     end
 end
