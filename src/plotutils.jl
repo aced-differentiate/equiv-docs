@@ -1,6 +1,9 @@
 # using GLMakie
 # using CairoMakie
-using Plots
+# using Plots
+
+function vector_field_plot(v, g; kwargs...)
+    s="""vector_field_plot has been removed to eliminate dependency on `Plots`. To use it copy below code into your program:
 
 function vector_field_plot(v, g; kwargs...)
     x = g.x
@@ -9,6 +12,9 @@ function vector_field_plot(v, g; kwargs...)
     v = getindex.(v, 2)
     x, y, u, v = vec.([x, y, u, v])
     quiver(x, y; quiver = (u, v), kwargs...)
+end
+"""
+error(s)
 end
 # function vis(x::EquivConv)
 #     r=LinRange(0.,x.rmax,64)

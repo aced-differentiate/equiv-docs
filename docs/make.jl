@@ -8,6 +8,6 @@ using .EquivariantOperators
 ##
 makedocs(
     sitename = "EquivariantOperators.jl",
-    pages = ["index.md","guide.md",],
+    pages = ["index.md","autodiff.md","guide.md",],
     # pages = ["index.md", "architecture.md", "publications.md", "tutorials.md"],
 )

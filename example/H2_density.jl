@@ -14,7 +14,7 @@ using Random
 Random.seed!(1)
 
 name = "h2"
-case = load("..\\density-prediction\\data\\$name.jld2", "cases")[1]
+case = load("data\\$name.jld2", "cases")[1]
 @show positions = case.positions
 @show charges = case.charges
 natoms = length(charges)

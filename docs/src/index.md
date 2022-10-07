@@ -2,7 +2,7 @@
 
 ## Synopsis
 
-EquivariantOperators.jl implements in Julia fully differentiable finite difference operators on scalar or vector fields in 2d/3d. It can run forwards for PDE simulation or image processing, or back propagated for machine learning or inverse problems. Emphasis is on symmetry preserving rotation equivariant operators, including differential operators, common Green's functions & parametrized neural operators. Supports possibly nonuniform, nonorthogonal or periodic grids.
+EquivariantOperators.jl implements in Julia fully differentiable finite difference operators on scalar or vector fields in 2d/3d. It can run forwards for FDTD simulation or image processing, or back propagated for machine learning or inverse problems. Emphasis is on symmetry preserving rotation equivariant operators, including differential operators, common Green's functions & parametrized neural operators. Supports scalar and vector field convolutions with customizable products eg `*` or `dot`. Automatically performs convolutions using FFT when it's faster doing so. Supports possibly nonuniform, nonorthogonal or periodic grids.
 
 ## Tutorials
 

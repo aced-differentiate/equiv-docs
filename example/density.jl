@@ -91,8 +91,8 @@ display(fig)
 # function loss(x)
 #     y=x.ρe
 #     global yhat=m(x)
-#     sumy = sum(y)
-#     @show l = nae(yhat, y; sumy)
+#     s = sum(y)
+#     @show l = nae(yhat, y; s)
 #     l
 # end
 #

@@ -68,9 +68,9 @@ T(            (cell * collect(a .- origin))...)
     Grid(cell, origin, rvecs, Y, R, dv)
 end
 
-function Grid(cell, rmax::Real)
+function Grid(cell, rmax::Real;kw...)
     n = size(cell, 1)
-    Grid(cell, 1 .+ 2 * ceil.(rmax * (cell \ ones(n))))
+    Grid(cell, 1 .+ 2 * ceil.(rmax * (cell \ ones(n)));kw...)
 end
 
 

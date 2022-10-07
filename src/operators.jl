@@ -4,6 +4,8 @@ using Functors
 
 include("grid.jl")
 include("conv.jl")
+include("diffrules.jl")
+
 include("radfuncs.jl")
 # include("diffrules.jl")
 Random.seed!(1)
@@ -18,7 +20,7 @@ mutable struct Op
     rmax
 end
 @functor Op
-Flux.trainable(m::Op) = [m.radfunc]
+# Flux.trainable(m::Op) = [m.radfunc]
 
 function makekernel(radfunc, rmin, rmax, l, grid;)
     @unpack cell, Y, R, dv, r = grid
@@ -198,9 +200,27 @@ end
 function Base.abs(x::AbstractArray)
     sum(abs.(x))
 end
-function nae(yhat, y; sumy = sum(abs.(y)))
-    if sumy == 0
+
+"""
+    function nae(yhat, y; s = sum(abs.(y)))
+
+Normalized absolute error. eg 0.1 denotes 10% absolute error
+"""
+function nae(yhat, y; s = sum(abs.(y)))
+    if s == 0
         error()
     end
-    sum(abs.(yhat .- y)) / sumy
+    sum(abs.(yhat .- y)) / s
 end
+
+# function center(a)
+#   r=  1/sum(a)*sum(Iterators.product([
+#         1:n for n in size(a)
+#     ]...)) do ix
+#     a[ix...]*collect(ix)
+# end
+# end
+
+# function center(T,a)
+#     T.(center(a))
+# end

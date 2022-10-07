@@ -12,17 +12,17 @@ function dconv(x, a, b;kw...)
     n = length(size(a))
     x = reshape(vec(x), (size(a) .+ size(b) .- ones(Int, n))...)
     r = (
-        dspconv(x, reverse(b);kw...)[(
+        fftconv(x, reverse(b);kw...)[(
             # DSP.xcorr(x, b, padmode = :none)[(
             i:j for (i, j) in zip(size(b), size(x))
         )...],
-        dspconv(x, reverse(a);kw...)[(
+        fftconv(x, reverse(a);kw...)[(
             # DSP.xcorr(x, a, padmode = :none)[(
             i:j for (i, j) in zip(size(a), size(x))
         )...],
     )
     return r
 end
-# @adjoint dspconv(a, b) = dspconv(a, b), x -> dconv(x, a, b)
-@adjoint dspconv(a, b;kw...) = dspconv(val.(a), val.(b);kw...),
+# @adjoint fftconv(a, b) = fftconv(a, b), x -> dconv(x, a, b)
+@adjoint fftconv(a, b;kw...) = fftconv(val.(a), val.(b);kw...),
 x -> dconv(val.(x), val.(a), val.(b);kw...)
