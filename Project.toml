@@ -5,6 +5,7 @@ version = "0.1.4"
 
 [deps]
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 FFTW = "7a1cc6ca-52ef-59f5-83cd-3a7055c09341"
 Functors = "d9f16b24-f501-4c13-a1f2-28368ffc5196"
 ImageFiltering = "6a3955dd-da59-5b1f-98d4-e7296123deb5"
