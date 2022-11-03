@@ -1,6 +1,15 @@
 # using Flux: conv
 using LinearAlgebra
 using ImageFiltering
+using FFTW
+using StaticArrays
+using Memoize
+# using LRUCache
+
+# @memoize LRU{Tuple{AbstractArray},AbstractArray}(maxsize=25) function fft_(a)
+#     println("Running")
+#     fft(a)
+# end
 
 function overlapdot(x, f; start=nothing, center=nothing, product=*)
     # start=center===nothing ? ones(Int,ndims(x)) : Int.(center) .-(size(f).-1).÷2
@@ -22,51 +31,58 @@ function overlapdot(x, f; start=nothing, center=nothing, product=*)
     ))
 end
 
-# function zero_(x)
-#     if x <: SVector
-#         return zeros(x)
-#     end
-#     zero(x)
-# end
+@memoize function padfft_(a,sz)
+    @debug "cache miss, computing fft"
+    padfft(a,sz)
+end
 
-using FFTW
-using StaticArrays
+# const FFTCACHE=memoize_cache(padfft_)
+# FFTCACHE=memoize_cache(padfft_)
+# EQUIVARIANTOPERATORS=(;
 
+setcaching(b)=(global caching=b)
+# settings=(;caching=false)
+cache=memoize_cache(padfft_)
+emptycache()=empty!(cache)
+
+# ENV["EQUIVARIANTOPERATORS_CACHING"]=false
+
+function padfft(a,sz)
+    n=length(a[1])
+    u = fill(zero(eltype(a)), sz)
+    u[[1:size(a, i) for i = 1:ndims(a)]...] .= a
+    a = u
+    
+    X = fft.([getindex.(a, i) for i in 1:n])
+    X = n == 1 ? X[1] : SVector.(X...)
+end
 """
-    fftconv(x, y; product=*)
+fftconv(x, y; product=*)
 
 Signal processing convolution via FFT in any dimension. 
 """
-function fftconv(x, y; product=*)
-    @info "convolution using FFT"
+function fftconv(x, y; product=*,caching=false)
+    @debug "convolution using FFT"
+    # @show size(x), size(y),eltype(x),eltype(y)
     
-    sz = size(x) .+ size(y) .- 1
-    u = fill(zero(eltype(x)), sz)
-    v = fill(zero(eltype(y)), sz)
-    @show size(x), size(y),eltype(x),eltype(y)
-    u[[1:size(x, i) for i = 1:ndims(x)]...] .= x
-    v[[1:size(y, i) for i = 1:ndims(y)]...] .= y
-    x = u
-    y = v
-
-    X = fft.([getindex.(x, i) for i in eachindex(x[1])])
-    X = length(X[1][1]) == 1 ? X[1] : SVector.(X...)
-    Y = fft.([getindex.(y, i) for i in eachindex(y[1])])
-    Y = length(Y[1][1]) == 1 ? Y[1] : SVector.(Y...)
+    sz = Tuple(size(x) .+ size(y) .- 1)
+    f=caching ? padfft_ : padfft
+    # @show 1
+    X=f(x,sz)
+    # @show 2
+    Y=f(y,sz)
+    
     Z = product.(X, Y)
+    
 
-
-    r = real.(ifft.([getindex.(Z, i) for i in eachindex(Z[1])]))
-    if length(r[1][1]) == 1
-        return r[1]
-    end
-    return SVector.(r...)
-    # ifft()
+   Z = real.(ifft.([getindex.(Z, i) for i in eachindex(Z[1])]))
+    nz=length(Z)
+     nz == 1 ? Z[1] : SVector.(Z...)
 end
 
 
-function fftconv_(x, y; product=*, pad=:outer, border=0)
-    r = fftconv(x, y; product)
+function fftconv_(x, y; product=*, pad=:outer, border=0,caching=false,kw...)
+    r = fftconv(x, y; product,caching)
     s= ((size(y) .- 1) .÷ 2).+1
     p=size(x)
     I=[a:b for (a,b) in zip(s,s.+p.-1)]
@@ -75,7 +91,7 @@ function fftconv_(x, y; product=*, pad=:outer, border=0)
     elseif pad == :same && border == 0
         # return r[[Int(b + 1):Int(a + b) for (a, b) in zip(size(x), (size(y) .- 1) .÷ 2)]...]
         return r[I...]
-    elseif pad == :same && border == :circular
+    elseif pad == :same && border in [:circular,:periodic]
         for ix in eachindex(view(r,fill(:,ndims(x))...))
             i=mod.(ix.-s,p).+s
             if i != Tuple(ix)
@@ -102,7 +118,7 @@ end
 `border` type of padding
 - `0` value pixels
 - `:replicate` repeats edge values
-- `:circular` periodic BC
+- `periodic` or `:circular`: periodic BC
 - `:smooth` continuous derivatives at boundaries useful for differential operators
 - `:reflect` reflects interior across boundaries which are not repeated
 - `:symmetric` same as `:reflect` but with boundaries repeated
@@ -116,19 +132,20 @@ Convolutions in other Julia packages, fewer features but perhaps more optimized 
 - `DSP.conv` `DSP.xcor`
 - `Flux.conv`
 """
-function cvconv(x, f; product=*, stride=1, pad=0, border=0, alg=nothing)
-    if alg===nothing
+function cvconv(x, f; product=*, stride=1, pad=0, border=0, alg=nothing,periodic=false,kw...)
+     periodic && (border= :circular)
+     if alg===nothing
         if length(f)>27
             alg=:fft
         end
     end
 
     if alg == :fft
-        return fftconv_(x, reverse(f); product, pad, border)
+        return fftconv_(x, reverse(f); product, pad, border,kw...)
     end
     
-    @info "direct convolution "
-    @show size(x), size(f),eltype(x),eltype(f)
+    @debug "direct convolution "
+    # @show size(x), size(f),eltype(x),eltype(f)
     if pad == :outer
         pad = size(f) .- 1
     elseif pad == :same
@@ -140,30 +157,30 @@ function cvconv(x, f; product=*, stride=1, pad=0, border=0, alg=nothing)
         starts = Iterators.product([
             a:stride:b
             for
-            (a, b) in
-            zip(ones(Int, ndims(x)) .- pad, size(x) .- size(f) .+ 1 .+ pad)
-        ]...)
-        # return [overlapdot(x, f;start, product) for l in l]
+                (a, b) in
+                zip(ones(Int, ndims(x)) .- pad, size(x) .- size(f) .+ 1 .+ pad)
+                ]...)
+                # return [overlapdot(x, f;start, product) for l in l]
         return map(start -> overlapdot(x, f; start, product), starts)
     else
         # if border==:circular
         x = parent(padarray(x, Pad(border, pad...)))
         starts = Iterators.product([
             1:stride:b for b in size(x) .- size(f) .+ 1
-        ]...)
+            ]...)
         return map(
             start -> sum(product.(
                 x[[a:b for (a, b) in zip(start, start .+ size(f) .- 1)]...],
                 f,
-            )), starts
+                )), starts
         )
         # return [
-        #     sum(product.(
-        #         x[[a:b for (a, b) in zip(l, l .+ size(f) .- 1)]...],
+            #     sum(product.(
+                #         x[[a:b for (a, b) in zip(l, l .+ size(f) .- 1)]...],
         #         f,
         #     )) for l in l
         # ]
-
+        
     end
 end
 
@@ -173,15 +190,21 @@ function cvconv(x::AbstractArray{T}, f::AbstractArray{T}; kw...) where {T<:Compl
     cvconv(x, f; product=(x, y) -> x * conj(y), kw...)
 end
 """
-    dspconv(x, f; product = *,pad = :outer,border=0)
+dspconv(x, f; product = *,pad = :outer,border=0)
 
 Convolution in signal processing. For "convolution" in computer vision, use cvconv instead. Automatically uses FFT for big kernels. By default output size is `size(x) .+ size(f) .- 1`. See `cvconv` for its keyword options which also apply here
 """
-function dspconv(x, f; product=*, pad=:outer, border=0, alg=nothing)
-    if alg == :fft
-        return fftconv_(x, f; product, pad, border)
+function dspconv(x, f; product=*, pad=:outer, border=0,periodic=false, alg=nothing,kw...)
+    periodic && (border= :circular)
+    if alg===nothing
+        if length(f)>27
+            alg=:fft
+        end
     end
-    cvconv(x, reverse(f); product, pad, border,alg)
+    if alg == :fft
+        return fftconv_(x, f; product, pad, border,kw...)
+    end
+    cvconv(x, reverse(f); product, pad, border,alg,kw...)
 end
 # function Δ(x, y)
 #     sum(abs.(x .- y)) / sum(abs.(y))

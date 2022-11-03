@@ -16,7 +16,7 @@ y=cvconv(x,f;pad=:same,border=:circular)
 # make grid
 dims = 2
 dx = 0.1
-cell = dx * Matrix(I, dims, dims)
+cell = dx * I(dims)
 rmax=.5
 grid=Grid(cell,rmax)
 
@@ -37,5 +37,5 @@ lap_a=▽2(a)
 plot(
 heatmap(a'; title = "x^3+y^3"),
 heatmap(lap_a'; title = "x^3+y^3 laplacian"),
-vector_field_plot(.1del_a,grid,title = "x^3+y^3 gradient" ),
-layout=3)
+# vector_field_plot(.1del_a,grid,title = "x^3+y^3 gradient" ),
+layout=2)

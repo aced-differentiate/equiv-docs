@@ -16,7 +16,7 @@ include("$DIR/operators.jl")
 # make grid
 dims = 2
 dx = 0.1
-cell = dx * Matrix(I, dims, dims)
+cell = dx * I(dims)
 rmax = 1.0
 grid = Grid(cell, rmax)
 

@@ -14,7 +14,7 @@ include("../src/plotutils.jl")
 # make grid
 dims = 2
 dx = 0.1
-cell = dx * Matrix(I, dims, dims)
+cell = dx * I(dims)
 rmax = 1.0
 grid = Grid(cell, rmax)
 
@@ -22,7 +22,7 @@ grid = Grid(cell, rmax)
 rmin = 1e-9
 pad = :same
 ϕ = Op(r -> 1 / (4π * r), rmax, cell; rmin, pad)
-E = Op(r -> 1 / (4π * r^2), rmax, cell; rmin, pad, l = 1)
+E = Op(r -> 1 / (4π * r^2), rmax, cell; rmin, pad, l = 1,)
 ▽ = Del(cell)
 
 # put dipole charges
@@ -42,11 +42,16 @@ rvec = [0, 0]
 
 ##
 # make neural operators
-nbasis = 32
-ϕ_ = Op(Radfunc(nbasis), rmax, cell; rmin, pad)
-E_ = Op(Radfunc(nbasis), rmax, cell; rmin, l = 1, pad)
+n = 32
+σ=leakyrelu
+f1 = Chain(Dense(1, n, σ), Dense(n, 1))
+f2 = Chain(Dense(1, n, σ), Dense(n, 1))
 
-ps = Flux.params(ϕ_, E_)
+
+ϕ_ = Op(r->f1([r])[1], rmax, cell; rmin, pad)
+E_ = Op(r->f2([r])[1], rmax, cell; rmin, l = 1, pad,alg=:direct)
+ps = Flux.params(f1,f2)
+
 function loss()
     remake!(E_)
     remake!(ϕ_)

@@ -23,33 +23,21 @@ end
 # Flux.trainable(m::Op) = [m.radfunc]
 
 function makekernel(radfunc, rmin, rmax, l, grid;)
-    @unpack cell, Y, R, dv, r = grid
+    @unpack cell, Y, r, dv, p = grid
     n = size(cell, 1)
     f = r -> rmin <= r <= rmax ? radfunc(r) : 0.0
-    rscalars = f.(R)
+    rscalars = f.(r)
     if l == 0
         return rscalars * dv
     end
 
     while l > length(Y)
-        push!(Y, harmonics(r, length(Y) + 1))
+        push!(Y, harmonics(p, length(Y) + 1))
     end
 
     kernel = rscalars .* Y[l] * dv
 end
 
-"""
-    Op(radfunc, rmax, cell::Matrix; kw...)
-
-constructs equivariant operator
-"""
-function Op(radfunc, rmax, cell::Matrix; cutoff=true,kw...)
-    grid = Grid(cell, rmax)
-    if !cutoff
-        rmax=Inf
-    end
-    Op(radfunc,  grid; rmax,kw...)
-end
 function Op(
     radfunc,
     grid::Grid;
@@ -57,12 +45,25 @@ function Op(
     l = 0,
     convfunc = dspconv,
     rmin = 0.0,
+    pad=:same,
     kw...,
 )
     kernel = makekernel(radfunc, rmin, rmax, l, grid)
-    convfunc_(x, f; kw1...) = convfunc(x, f; kw..., kw1...)
+    convfunc_(x, f; kw1...) = convfunc(x, f;pad, kw..., kw1...)
 
     Op(l, kernel, grid, convfunc_, radfunc, rmin, rmax)
+end
+"""
+    Op(radfunc, rmax, cell::AbstractMatrix; kw...)
+
+constructs equivariant operator
+"""
+function Op(radfunc, rmax, cell::AbstractMatrix; cutoff=true,kw...)
+    grid = Grid(cell, rmax)
+    if !cutoff
+        rmax=Inf
+    end
+    Op(radfunc,  grid; rmax,kw...)
 end
 
 """
@@ -92,16 +93,19 @@ end
 
 constructs gradient operator
 """
-function Del(cell; pad = :same, border = :smooth)
+function Del(cell::AbstractMatrix; pad = :same, border = :smooth)
     l = 1
-    dims = ndims(cell)
-    grid = Grid(cell, fill(3, dims))
+    dims = size(cell,1)
+    grid = Grid(cell, fill(2, dims),fill(3, dims))
 
-
+if dims==1
+    kernel=[1,0,-1.]/2/cell[1]
+    else
     kernel = [
         SVector{dims}(sum(abs.(v)) > 1 ? zeros(dims) : -cell' \ SVector(v...) / 2)
         for v in Iterators.product(fill(-1:1, dims)...)
     ]
+        end
 
     radfunc = nothing
     rmin = 0.0
@@ -129,10 +133,10 @@ constructs Laplacian operator
 ```
 ```
 """
-function Laplacian(cell; pad = :same, border = :smooth)
+function Laplacian(cell::AbstractMatrix; pad = :same, border = :smooth)
     l = 0
-    dims = ndims(cell)
-    grid = Grid(cell, fill(3, dims))
+    dims = size(cell,1)
+    grid = Grid(cell, fill(2, dims),fill(3, dims))
 
     kernel = Del(cell/2).kernel
     kernel = [
@@ -159,10 +163,10 @@ end
 """
     Gaussian(cell, σ, rmax; kw...)
 
-constructs Gaussian diffusion operator
+constructs Normalized Gaussian diffusion operator
 """
 function Gaussian(cell, σ, rmax; kw...)
-    radfunc = r -> exp(-r^2 / (2 * σ^2)) / sqrt(2π * σ^(2dims))
+    radfunc = r -> exp(-r^2 / (2 * σ^2)) / sqrt(2π * σ^(2ndims(cell)))
     return Op(radfunc, rmax, cell; kw...)
 end
 
@@ -212,6 +216,22 @@ function nae(yhat, y; s = sum(abs.(y)))
     end
     sum(abs.(yhat .- y)) / s
 end
+
+
+function center!(pos)
+    n=size(pos,2)
+        center=sum(eachcol(pos))/n
+        pos.-=repeat(center,1,n)
+end
+
+norms(m)=norm.(eachcol(m))
+
+function rescale(a, s)
+    sa= sum(a)
+    er=(sa-s)/s
+    @info "normalization error $er"
+        a /sa * s
+    end
 
 # function center(a)
 #   r=  1/sum(a)*sum(Iterators.product([
