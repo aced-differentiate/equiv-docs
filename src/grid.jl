@@ -144,6 +144,7 @@ function nearest(grid, rvec)
         p in Iterators.product(fill(0:1, n)...)
         #  if ones(n) <= ixfloor .+p<=sz || error("interpolating out of bounds indices")
     ]
+        filter(t->t[2]>0,res)
 end
 
 function Base.put!(field::AbstractArray, grid::Grid, rvec, val)
@@ -154,6 +155,14 @@ end
 
 function Base.setindex!(a::AbstractArray, v, g::Grid, p...)
     put!(a, g, p, v)
+end
+    
+    function Base.setindex!(a::AbstractArray, b::AbstractArray, g1::Grid,g2::Grid, p...)
+        p.-=g2.origin.-1
+        for (i, w) in nearest(g1,p)
+            j=i.+size(b).-1
+        a[[i:j for (i,j) in zip(i,j)]...] .+=b.*w
+    end
 end
 # function Base.put!(f, grid, p::AbstractMatrix, vals)
 #     for (val, rvec) in zip(vals, eachcol(p))
