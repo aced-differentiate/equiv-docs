@@ -35,7 +35,7 @@ function makekernel(radfunc, rmin, rmax, l, grid;)
         push!(Y, harmonics(p, length(Y) + 1))
     end
 
-    kernel = rscalars .* Y[l] * dv
+    kernel = rscalars .* Y[l] 
 end
 
 function Op(
@@ -89,11 +89,13 @@ end
 """
 
 """"
+    Del(resolutions; pad = :same, border = :smooth)
     Del(cell; pad = :same, border = :smooth)
 
-constructs gradient operator
+constructs gradient operator (also divergence, curl) using central difference stencil
 """
-function Del(cell::AbstractMatrix; pad = :same, border = :smooth)
+function Del(a; pad = :same, border = :smooth)
+        cell=Grid(a).cell
     l = 1
     dims = size(cell,1)
     grid = Grid(cell, fill(2, dims),fill(3, dims))
@@ -133,7 +135,8 @@ constructs Laplacian operator
 ```
 ```
 """
-function Laplacian(cell::AbstractMatrix; pad = :same, border = :smooth)
+function Laplacian(a; pad = :same, border = :smooth)
+    cell=Grid(a).cell
     l = 0
     dims = size(cell,1)
     grid = Grid(cell, fill(2, dims),fill(3, dims))
@@ -165,7 +168,8 @@ end
 
 constructs Normalized Gaussian diffusion operator
 """
-function Gaussian(cell, σ, rmax; kw...)
+function Gaussian(a, σ, rmax; kw...)
+    cell=Grid(a).cell
     radfunc = r -> exp(-r^2 / (2 * σ^2)) / sqrt(2π * σ^(2ndims(cell)))
     return Op(radfunc, rmax, cell; kw...)
 end
@@ -188,7 +192,7 @@ end
 """
 function (m::Op)(x::AbstractArray; kw...)
     @unpack grid, kernel, convfunc = m
-    convfunc(x, kernel; kw...)
+    convfunc(x, kernel; kw...)*grid.dv
 end
 
 function LinearAlgebra.:·(m::Op, x)
