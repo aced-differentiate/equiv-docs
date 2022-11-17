@@ -157,7 +157,7 @@ function Base.setindex!(a::AbstractArray, v, g::Grid, p...)
     put!(a, g, p, v)
 end
     
-    function Base.setindex!(a::AbstractArray, b::AbstractArray, g1::Grid,g2::Grid, p...)
+    function Base.put!(a::AbstractArray, b::AbstractArray, g1::Grid,g2::Grid, p)
         p.-=g2.origin.-1
         for (i, w) in nearest(g1,p)
             j=i.+size(b).-1
