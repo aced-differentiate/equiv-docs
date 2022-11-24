@@ -19,9 +19,9 @@ rmax = 1.0
 grid = Grid(cell, rmax)
 sz = size(grid)
 ▽ = Del(cell)
-△ = Laplacian(cell)
+△ = Lap(cell)
 # laplacian
-# blur=Op(:Gaussian,cell;σ=.1)
+# blur=Op(:Gauss,cell;σ=.1)
 
 # diffusion advection with point emitter
 p = [0.2, 0.5, 0.5, 0.8]
@@ -29,7 +29,7 @@ D, vx, vy, k = p
 v = fill([vx, vy], sz)
 u0 = zeros(sz)
 s = zeros(sz)
-put!(s, grid, [0.0, 0.0], 1.0)
+place!(s, grid, [0.0, 0.0], 1.0)
 # s=blur(s)
 f(u, p, t) = D * (△(u)) - v .· ▽(u) .+ s * k
 

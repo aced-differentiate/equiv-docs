@@ -22,8 +22,8 @@ sz = size(grid)
 
 # put small blob as IC
 u0 = zeros(sz..., 1)
-put!(u0, grid, [0.0, 0.0], [1.0])
-g = Op(:Gaussian, cell; σ = dx)
+place!(u0, grid, [0.0, 0.0], [1.0])
+g = Op(:Gauss, cell; σ = dx)
 u0 = g(u0)
 
 # diffusion advection

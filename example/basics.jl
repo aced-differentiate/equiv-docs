@@ -28,7 +28,7 @@ a=x.^3+y.^3
 pad=:same
 border=:smooth
 ▽=Del(cell;pad,border)
-▽2=Laplacian(cell;pad,border)
+▽2=Lap(cell;pad,border)
 
 del_a=▽(a)
 lap_a=▽2(a)

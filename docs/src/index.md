@@ -2,11 +2,18 @@
 
 ## Synopsis
 
-EquivariantOperators.jl implements in Julia fully differentiable finite difference operators on scalar or vector fields in 2d/3d. It can run forwards for FDTD simulation or image processing, or back propagated for machine learning or inverse problems. Emphasis is on symmetry preserving rotation equivariant operators, including differential operators, common Green's functions & parametrized neural operators. Supports scalar and vector field convolutions with customizable products eg `*` or `dot`. Automatically performs convolutions using FFT when it's faster doing so. Supports possibly nonuniform, nonorthogonal or periodic grids.
+EquivariantOperators.jl implements in Julia fully differentiable finite difference and Green's function operators on scalar or vector fields in any dimension. Utilities for grid interpolation, particle mesh methods, boundary conditions and convolutions are also included. It can run forwards for FDTD simulation or image processing, or back propagated for machine learning or inverse problems. Emphasis is on symmetry preserving rotation equivariant operators, including differential operators, common Green's functions & parametrized neural operators. Supports scalar and vector field convolutions with customizable products eg  `dot`. Automatically performs convolutions using FFT when it's faster doing so. Supports possibly nonuniform, nonorthogonal or periodic grids.
 
-## Tutorials
+## Features
 
-Hosted on [Colab notebooks](https://colab.research.google.com/drive/17JZEdK6aALxvn0JPBJEHGeK2nO1hPnhQ?usp=sharing)
+- Array operators in any dimension including derivative, gradient, divergence, Laplacian, curl, and customizable Green's functions
+- Interpolation and particle mesh methods on possibly non-orthogonal grids
+- Boundary conditions including periodic, smooth, zero, mirror
+- Feature rich convolutions on scalar arrays and vector fields with automatic FFT computation when appropriate
+- Fully differentiable compatible with `Flux` `Zygote`
+
+## Github
+Star us at [Github](https://github.com/aced-differentiate/EquivariantOperators.jl) :) Raise Github issue if you have questions :)
 
 ## Theory
 

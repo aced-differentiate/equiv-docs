@@ -41,7 +41,7 @@ C = sum(ρe) * dv
 @show C, -sum(charges)
 
 ρp = zeros(sz)
-put!(ρp, grid, positions, charges)
+place!(ρp, grid, positions, charges)
 
 function normρe(ρe, dv, C)
     ρe = -abs.(ρe)

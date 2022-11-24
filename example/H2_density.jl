@@ -33,7 +33,7 @@ C = sum(ρe) * dv
 @assert C ≈ -sum(charges)
 
 ρp=zeros(sz)
-put!(ρp,grid,positions,charges)
+place!(ρp,grid,positions,charges)
 
 # ρp=ρe=rand(4,4,4)
 

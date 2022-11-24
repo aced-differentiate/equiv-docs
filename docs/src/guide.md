@@ -1,37 +1,31 @@
 # Guide
 
-Documentation may not be accurate as this is a beta stage package undergoing changes. Get started with [tutorials](https://colab.research.google.com/drive/17JZEdK6aALxvn0JPBJEHGeK2nO1hPnhQ) which are more up to date.
+Documentation may not be accurate as this is a beta stage package undergoing changes. Raise Github issue if you have questions :)
 
 ## Scalar & vector fields
 
-Scalar & vector fields are represented as 2d/3d arrays of canonically scalars or vectors. Array values can alternatively be any type that Supports addition & multiplication.
+Scalar & vector fields are represented as 2d/3d arrays of canonically scalars or vectors (`StaticVectors` from `StaticArrays.jl` for performance). This vector field representation is consistent with multi-channel images from Julia Images which differs from representations using separate arrays for field components. Most `Images` functions are readily applicable. Array values can alternatively be any custom type that Supports addition & multiplication, such as complex numbers and custom structs encoding spherical harmonics.
 
-## Customizable grid
+## Customizable grid, interpolation, particle mesh placement 
 
 ```@docs
 Grid
+place!
 ```
 
-## Particle mesh placement and interpolation
-
-```@docs
-get(::AbstractArray, ::Grid, ::AbstractVector)
-```
 
 ## Finite difference equivariant operators
 
 ```@docs
-Op
 Del
-Laplacian
-Gaussian
+Lap
+Gauss
+Op
 ```
 
-## Lower level utilities
+## Convolutions
 
-### Convolutions
-
-Feature rich convolution and cross correlation functions with options for padding, stride, boundary conditions, and custom products (tensor field convolutions).
+Operators apply to most use cases but you may also use convolution functions directly. We offer feature rich convolution and cross correlation functions with options for padding, stride, boundary conditions, and custom products (tensor field convolutions). We use `DSP.conv` as our backend for scalar field convolutions and our own implementations for convolutions involving vector fields or custom products. FFT implementation is automatically invoked when appropriate. 
 
 ```@docs
 cvconv

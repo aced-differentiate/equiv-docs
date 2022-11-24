@@ -79,15 +79,15 @@ data_ = []
     @show sum(ρc_SAD)*dx^3,Nc
 
     ρpv = zeros(sz)
-    put!(ρpv, grid, positions, Zv)
+    place!(ρpv, grid, positions, Zv)
     ρpc = zeros(sz)
-    put!(ρpc, grid, positions, Zc)
+    place!(ρpc, grid, positions, Zc)
     ρp = ρpc + ρpv
 
     # ρmh = zeros(sz)
-    # put!(ρmh, grid, positions, [ustrip(elements[z].molar_heat) for z in Z])
+    # place!(ρmh, grid, positions, [ustrip(elements[z].molar_heat) for z in Z])
     ρen = zeros(sz)
-    put!(ρen, grid, positions, [EN[z] for z in Z])
+    place!(ρen, grid, positions, [EN[z] for z in Z])
 
     function rescale(a, s)
         a / sum(a) * s

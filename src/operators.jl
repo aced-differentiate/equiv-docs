@@ -28,7 +28,7 @@ function makekernel(radfunc, rmin, rmax, l, grid;)
     f = r -> rmin <= r <= rmax ? radfunc(r) : 0.0
     rscalars = f.(r)
     if l == 0
-        return rscalars * dv
+        return rscalars
     end
 
     while l > length(Y)
@@ -58,41 +58,121 @@ end
 
 constructs equivariant operator
 """
-function Op(radfunc, rmax, cell::AbstractMatrix; cutoff=true,kw...)
-    grid = Grid(cell, rmax)
+
+"""
+    Op(radfunc, rmax, resolutions; l = 0, rmin = 0., pad = :same)
+    Op(radfunc, rmax, cell; kw...)
+    Op(radfunc, grid; kw...)
+
+`Op` constructs equivariant finite difference operators & custom Green's functions by specifying the radial function of the impulse response. Prebuilt operators like differential operators (`▽`) & common Green's functions can be constructed instead using `Del`, `Lap`.
+
+# Args
+- `l`: rotation order, `0` for scalar field, `1` for vector field
+
+# Example
+```
+dx = dy = 0.1
+resolutions = (dx, dy)
+rmin = 1e-9
+rmax = 0.2
+ϕ = Op(r -> 1 / r, rmax, resolutions; rmin) # 1/r potential
+F = Op(r -> 1 / r^2, rmax, resolutions; rmin, l=1) # 1/r^2 field
+
+g = Grid(resolutions,)
+a = zeros(5, 5)
+a[3, 3] = 1.0 / g.dv # puts discrete value integrating to 1.0 onto array
+
+ϕ(a)
+#=
+5×5 Matrix{Float64}:
+ 0.0   0.0       5.0   0.0      0.0
+ 0.0   7.07107  10.0   7.07107  0.0
+ 5.0  10.0       0.0  10.0      5.0
+ 0.0   7.07107  10.0   7.07107  0.0
+ 0.0   0.0       5.0   0.0      0.0
+=#
+
+F(a)
+#=
+5×5 Matrix{SVector{2, Float64}}:
+ [0.0, 0.0]    [0.0, 0.0]            [-25.0, 0.0]   [0.0, 0.0]           [0.0, 0.0]
+ [0.0, 0.0]    [-35.3553, -35.3553]  [-100.0, 0.0]  [-35.3553, 35.3553]  [0.0, 0.0]
+ [0.0, -25.0]  [0.0, -100.0]         [0.0, 0.0]     [0.0, 100.0]         [0.0, 25.0]
+ [0.0, 0.0]    [35.3553, -35.3553]   [100.0, 0.0]   [35.3553, 35.3553]   [0.0, 0.0]
+ [0.0, 0.0]    [0.0, 0.0]            [25.0, 0.0]    [0.0, 0.0]           [0.0, 0.0]
+=#
+```
+"""
+function Op(radfunc, rmax, a; cutoff=true,kw...)
+    grid = Grid(a, rmax)
     if !cutoff
         rmax=Inf
     end
     Op(radfunc,  grid; rmax,kw...)
 end
 
-"""
-    Op(
-        name::Union{Symbol,String},
-        cell;
-        pad =:same,
-        rmin = 0,
-        rmax = Inf,
-        l = 0,
-        σ = 1.0,
-    )
-    Op(
-        radfunc,
-        rmin::AbstractFloat,
-        rmax::AbstractFloat,
-        cell;
-        l = 0,
-        pad =:same,
-    )
 
-`Op` constructs finite difference operators. Prebuilt operators like differential operators (`▽`) & common Green's functions can be specified by name. Custom equivariant operators can be made by specifying radial function.
 """
-
-""""
     Del(resolutions; pad = :same, border = :smooth)
     Del(cell; pad = :same, border = :smooth)
 
-constructs gradient operator (also divergence, curl) using central difference stencil
+constructs gradient operator (also divergence, curl) using central difference stencil. By default, boundaries are smooth (C1 continuous) and output is of same length as input, meaning boundary values are repeated by 1 pixel.
+
+# Example
+## 1d derivative
+```
+dx = 0.1
+x = 0:dx:.5
+y = x .^ 2
+d = Del((dx,))
+d(y)
+
+#=
+We use a central difference stencil cut off at both boundaries. 
+To enforce C1 continuity and same output length, the boundary derivative values are repeated from the nearest interior point.
+6-element Vector{Float64}:
+ 0.2
+ 0.2
+ 0.4
+ 0.6
+ 0.8
+ 0.8
+=#
+```
+
+## 2d gradient
+```
+dy = dx = 0.1
+a = [x^2 + y^2 for x in 0:dx:0.5, y in 0:dy:0.5]
+▽ = Del((dx, dy))
+grad_a = ▽(a)
+
+#=
+6×6 Matrix{SVector{2, Float64}}:
+[0.2, 0.2]  [0.2, 0.2]  [0.2, 0.4]  [0.2, 0.6]  [0.2, 0.8]  [0.2, 0.8]
+ [0.2, 0.2]  [0.2, 0.2]  [0.2, 0.4]  [0.2, 0.6]  [0.2, 0.8]  [0.2, 0.8]
+ [0.4, 0.2]  [0.4, 0.2]  [0.4, 0.4]  [0.4, 0.6]  [0.4, 0.8]  [0.4, 0.8]
+ [0.6, 0.2]  [0.6, 0.2]  [0.6, 0.4]  [0.6, 0.6]  [0.6, 0.8]  [0.6, 0.8]
+ [0.8, 0.2]  [0.8, 0.2]  [0.8, 0.4]  [0.8, 0.6]  [0.8, 0.8]  [0.8, 0.8]
+ [0.8, 0.2]  [0.8, 0.2]  [0.8, 0.4]  [0.8, 0.6]  [0.8, 0.8]  [0.8, 0.8]
+=#
+``` 
+## 2d divergence
+```
+dy = dx = 0.1
+a = [[2x,3y] for x in 0:dx:0.5, y in 0:dy:0.5]
+▽ = Del((dx, dy))
+▽ ⋅ (a)
+#=
+6×6 Matrix{Float64}:
+ 5.0  5.0  5.0  5.0  5.0  5.0
+ 5.0  5.0  5.0  5.0  5.0  5.0
+ 5.0  5.0  5.0  5.0  5.0  5.0
+ 5.0  5.0  5.0  5.0  5.0  5.0
+ 5.0  5.0  5.0  5.0  5.0  5.0
+ 5.0  5.0  5.0  5.0  5.0  5.0
+=#
+```
 """
 function Del(a; pad = :same, border = :smooth)
         cell=Grid(a).cell
@@ -108,6 +188,7 @@ if dims==1
         for v in Iterators.product(fill(-1:1, dims)...)
     ]
         end
+        kernel/=grid.dv
 
     radfunc = nothing
     rmin = 0.0
@@ -127,26 +208,41 @@ if dims==1
 end
 
 """
-    Laplacian(cell; pad = :same, border = :smooth)
+    Lap(cell; pad = :same, border = :smooth)
 
 constructs Laplacian operator
 
 # Examples
 ```
+# 2d Example
+dy = dx = 0.1
+a = [x^2 + y^2 for x in 0:dx:0.5, y in 0:dy:0.5]
+▽2 = Lap((dx, dy))
+▽2(a)
+
+#=
+6×6 Matrix{Float64}:
+ 4.0  4.0  4.0  4.0  4.0  4.0
+ 4.0  4.0  4.0  4.0  4.0  4.0
+ 4.0  4.0  4.0  4.0  4.0  4.0
+ 4.0  4.0  4.0  4.0  4.0  4.0
+ 4.0  4.0  4.0  4.0  4.0  4.0
+ 4.0  4.0  4.0  4.0  4.0  4.0
+=#
 ```
 """
-function Laplacian(a; pad = :same, border = :smooth)
-    cell=Grid(a).cell
+function Lap(a; pad = :same, border = :smooth)
     l = 0
-    dims = size(cell,1)
-    grid = Grid(cell, fill(2, dims),fill(3, dims))
-
-    kernel = Del(cell/2).kernel
+    dims = size(a,1)
+    grid = Grid(a./2, fill(2, dims),fill(3, dims))
+    
+    kernel = Del(grid.cell).kernel*grid.dv
     kernel = [
         dspconv(kernel, kernel; product = dot)[i...]
         for i in Iterators.product(fill(1:2:5, dims)...)
-    ]
-
+            ]/grid.dv/4
+            
+            grid = Grid(a, fill(2, dims),fill(3, dims))
     radfunc = nothing
     rmin = 0.0
     rmax = Inf
@@ -164,11 +260,12 @@ function Laplacian(a; pad = :same, border = :smooth)
 end
 
 """
-    Gaussian(cell, σ, rmax; kw...)
+    Gauss(resolutions, σ, rmax; kw...)
+    Gauss(cell, σ, rmax; kw...)
 
-constructs Normalized Gaussian diffusion operator
+constructs Gaussian diffusion operator with volume Normalized to 1 wrt grid support
 """
-function Gaussian(a, σ, rmax; kw...)
+function Gauss(a, σ, rmax; kw...)
     cell=Grid(a).cell
     radfunc = r -> exp(-r^2 / (2 * σ^2)) / sqrt(2π * σ^(2ndims(cell)))
     return Op(radfunc, rmax, cell; kw...)

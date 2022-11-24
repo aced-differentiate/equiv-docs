@@ -1,4 +1,5 @@
 using Zygote: @adjoint
+using DSP: conv
 # using Zygote
 # using ForwardDiff
 #
@@ -12,17 +13,17 @@ function dconv(x, a, b;kw...)
     n = length(size(a))
     x = reshape(vec(x), (size(a) .+ size(b) .- ones(Int, n))...)
     r = (
-        fftconv(x, reverse(b);kw...)[(
+        conv(x, reverse(b);kw...)[(
             # DSP.xcorr(x, b, padmode = :none)[(
             i:j for (i, j) in zip(size(b), size(x))
         )...],
-        fftconv(x, reverse(a);kw...)[(
+        conv(x, reverse(a);kw...)[(
             # DSP.xcorr(x, a, padmode = :none)[(
             i:j for (i, j) in zip(size(a), size(x))
         )...],
     )
     return r
 end
-# @adjoint fftconv(a, b) = fftconv(a, b), x -> dconv(x, a, b)
-@adjoint fftconv(a, b;kw...) = fftconv(val.(a), val.(b);kw...),
+# @adjoint conv(a, b) = conv(a, b), x -> dconv(x, a, b)
+@adjoint conv(a, b;kw...) = conv(val.(a), val.(b);kw...),
 x -> dconv(val.(x), val.(a), val.(b);kw...)

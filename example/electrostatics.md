@@ -29,7 +29,7 @@ E = Op(r -> 1 / (4π * r^2), rmin, rmax, cell; l = 1)
 
 # put dipole charges
 ρf = zeros(size(grid)..., 1)
-put!(ρf, grid, [0.5 0.0; -0.5 0.0]', [1.0 -1]'')
+place!(ρf, grid, [0.5 0.0; -0.5 0.0]', [1.0 -1]'')
 
 # calculate fields
 Ef = E(ρf)
