@@ -1,7 +1,7 @@
 name = "EquivariantOperators"
 uuid = "e0aa4542-b1ed-4e6a-a09e-9c4627a9da65"
 authors = ["Paul Shen <pxshen@alumni.stanford.edu>"]
-version = "0.1.5"
+version = "0.1.6"
 
 [deps]
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
@@ -25,4 +25,4 @@ Zygote = "0.6.40"
 #Random = "0.1.4"
 julia = "1.8, 1.9"
 Memoize="0.4.4"
-DSP = "0.7.5"
+DSP = "0.7.7"
