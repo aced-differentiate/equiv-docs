@@ -116,7 +116,7 @@ end
     Del(resolutions; pad = :same, border = :smooth)
     Del(cell; pad = :same, border = :smooth)
 
-constructs gradient operator (also divergence, curl) using central difference stencil. By default, boundaries are smooth (C1 continuous) and output is of same length as input, meaning boundary values are repeated by 1 pixel.
+constructs gradient operator (also divergence, curl) using central difference stencil. By default, boundaries are smooth (C1 or C2 continuous) and output is of same length as input.
 
 # Example
 ## 1d derivative
@@ -128,15 +128,13 @@ d = Del((dx,))
 d(y)
 
 #=
-We use a central difference stencil cut off at both boundaries. 
-To enforce C1 continuity and same output length, the boundary derivative values are repeated from the nearest interior point.
 6-element Vector{Float64}:
- 0.2
+ 0.0
  0.2
  0.4
  0.6
  0.8
- 0.8
+ 1.0
 =#
 ```
 
@@ -194,17 +192,8 @@ if dims==1
     rmin = 0.0
     rmax = Inf
     # @show border == :smooth
-    if border == :smooth
-         function f1(x,f;product=*)
-         r=dspconv(x, f; pad=0,product)
-         ix=[Int.([1, (1:a)..., a]) for a in size(r)]
-            r = r[ix...]
-        end
-        return Op(l, kernel, grid, f1, radfunc, rmin, rmax)
-    else
         convfunc_= (x,f;product=*)->dspconv(x, f; pad, border,product)
         return Op(l, kernel, grid, convfunc_, radfunc, rmin, rmax)
-    end
 end
 
 """
@@ -246,17 +235,8 @@ function Lap(a; pad = :same, border = :smooth)
     radfunc = nothing
     rmin = 0.0
     rmax = Inf
-    if border == :smooth
-        function f1(x,f)
-        r=dspconv(x, f; pad=0)
-        ix=[Int.([1, (1:a)..., a]) for a in size(r)]
-           r = r[ix...]
-       end
-        return Op(l, kernel, grid, f1, radfunc, rmin, rmax)
-    else
-        convfunc_= (x,f)->dspconv(x, f; pad, border)
-        return Op(l, kernel, grid, convfunc_, radfunc, rmin, rmax)
-    end
+    convfunc_= (x,f;product=*)->dspconv(x, f; pad, border,product)
+    return Op(l, kernel, grid, convfunc_, radfunc, rmin, rmax)
 end
 
 """

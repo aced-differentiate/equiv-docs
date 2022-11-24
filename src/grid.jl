@@ -152,6 +152,11 @@ v / g.dv
 # 1000
 ```
 """
+function place!(field::AbstractArray, grid::Grid, rvec, val)
+    for (ix, w) in nearest(grid, rvec)
+        field[ix...] += w / grid.dv * val
+    end
+end
 function Base.get(field::AbstractArray, grid::Grid, rvec)
     sum([w * field[ix...] for (ix, w) in nearest(grid, rvec)])
 end
@@ -179,17 +184,12 @@ function nearest(grid, rvec)
         filter(t->t[2]>0,res)
 end
 
-function Base.place!(field::AbstractArray, grid::Grid, rvec, val)
-    for (ix, w) in nearest(grid, rvec)
-        field[ix...] += w / grid.dv * val
-    end
-end
 
 function Base.setindex!(a::AbstractArray, v, g::Grid, p...)
     place!(a, g, p, v)
 end
     
-    function Base.place!(a::AbstractArray, b::AbstractArray, g1::Grid,g2::Grid, p)
+    function place!(a::AbstractArray, b::AbstractArray, g1::Grid,g2::Grid, p)
         p.-=g2.origin.-1
         for (i, w) in nearest(g1,p)
             j=i.+size(b).-1

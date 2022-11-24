@@ -81,12 +81,32 @@ function fftconv(x, y; product=*, caching=false)
     nz == 1 ? Z[1] : SVector.(Z...)
 end
 
+function smoothix(n)
 
+end
 function convproc(r,szx,szy; pad=:outer, border=0, caching=false, kw...)
     s = ((szy .- 1) .÷ 2) .+ 1
     p = szx
     I = [a:b for (a, b) in zip(s, s .+ p .- 1)]
     if pad == :outer && border == 0
+        return r
+    elseif pad == :same && border == :smooth
+        r= r[I...]
+        for (i,n) in enumerate(size(r))
+            i2=[a==i ? (2:2) : (:) for a in ndims(r)]
+            i3=[a==i ? (3:3) : (:) for a in ndims(r)]
+            it=[a==i ? (2:n-1) : (:) for a in ndims(r)]
+            i_1=[a==i ? (n-1:n-1) : (:) for a in ndims(r)]
+            i_2=[a==i ? (n-2:n-2) : (:) for a in ndims(r)]
+            if n>3
+                r = cat(2r[i2...]-r[i3...],r[it...],2r[i_1...]-r[i_2...],dims=i)
+            elseif n==3
+                r = cat(r[i2...],r[it...],r[i_1...],dims=i)
+            # return (3,3,3)
+            else
+                error("each dimension in array size must be at least 3 for differential operators")
+            end
+        end
         return r
     elseif pad == :same && border == 0
         # return r[[Int(b + 1):Int(a + b) for (a, b) in zip(size(x), (size(y) .- 1) .÷ 2)]...]
@@ -153,6 +173,12 @@ function cvconv(x::AbstractArray{T}, f::AbstractArray{S}; product=*, stride=1, p
 
     @debug "direct convolution "
     # @show size(x), size(f),eltype(x),eltype(f)
+    border0=border
+    pad0=pad
+    if border==:smooth && pad==:same
+        border=0
+        pad=:outer 
+    end
     if pad == :outer
         pad = size(f) .- 1
     elseif pad == :same
@@ -160,15 +186,15 @@ function cvconv(x::AbstractArray{T}, f::AbstractArray{S}; product=*, stride=1, p
     elseif length(pad) == 1
         pad = fill(pad[1], ndims(x))
     end
-    if border == 0
+    if border == 0 
         starts = Iterators.product([
             a:stride:b
             for
             (a, b) in
             zip(ones(Int, ndims(x)) .- pad, size(x) .- size(f) .+ 1 .+ pad)
         ]...)
-        # return [overlapdot(x, f;start, product) for l in l]
-        return map(start -> overlapdot(x, f; start, product), starts)
+        r= map(start -> overlapdot(x, f; start, product), starts)
+        
     else
         # if border==:circular
         x = parent(padarray(x, Pad(border, pad...)))
@@ -189,6 +215,10 @@ function cvconv(x::AbstractArray{T}, f::AbstractArray{S}; product=*, stride=1, p
         # ]
 
     end
+    if border0==:smooth
+        r=convproc(r,size(x),size(f);border=border0,pad=pad0)
+    end
+    return r
 end
 
 # @show fftconv([1,2],[1,1,1])
