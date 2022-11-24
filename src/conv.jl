@@ -93,11 +93,11 @@ function convproc(r,szx,szy; pad=:outer, border=0, caching=false, kw...)
     elseif pad == :same && border == :smooth
         r= r[I...]
         for (i,n) in enumerate(size(r))
-            i2=[a==i ? (2:2) : (:) for a in ndims(r)]
-            i3=[a==i ? (3:3) : (:) for a in ndims(r)]
-            it=[a==i ? (2:n-1) : (:) for a in ndims(r)]
-            i_1=[a==i ? (n-1:n-1) : (:) for a in ndims(r)]
-            i_2=[a==i ? (n-2:n-2) : (:) for a in ndims(r)]
+            i2=[a==i ? (2:2) : (:) for a in 1:ndims(r)]
+            i3=[a==i ? (3:3) : (:) for a in 1:ndims(r)]
+            it=[a==i ? (2:n-1) : (:) for a in 1:ndims(r)]
+            i_1=[a==i ? (n-1:n-1) : (:) for a in 1:ndims(r)]
+            i_2=[a==i ? (n-2:n-2) : (:) for a in 1:ndims(r)]
             if n>3
                 r = cat(2r[i2...]-r[i3...],r[it...],2r[i_1...]-r[i_2...],dims=i)
             elseif n==3

@@ -9,33 +9,30 @@ include("../src/operators.jl")
 include("../src/plotutils.jl")
 # using Main.EquivariantOperators # end users should omit Main.
 
-x=reshape(1:25,5,5)
-f=ones(3,3)
-y=cvconv(x,f;pad=:same,border=:circular)
+x = reshape(1:25, 5, 5)
+f = ones(3, 3)
+y = cvconv(x, f; pad=:same, border=:circular)
 
 # make grid
-dims = 2
-dx = 0.1
-cell = dx * I(dims)
-rmax=.5
-grid=Grid(cell,rmax)
+dx = dy= 0.1
+resolutions = (dx, dy)
+rmax = 0.5
+grid = Grid(resolutions, rmax)
 
-# 2d array of f(x,y)=x^3+y^3
-@unpack x,y=grid
-a=x.^3+y.^3
+@unpack x, y = grid
+a = x .^ 3 + y .^ 3 # 2d array
 
 # make operators
-pad=:same
-border=:smooth
-▽=Del(cell;pad,border)
-▽2=Lap(cell;pad,border)
+▽ = Del(resolutions)
+▽2 = Lap(resolutions)
 
-del_a=▽(a)
-lap_a=▽2(a)
+del_a = ▽(a)
+lap_a = ▽2(a)
 
 ##
+xaxis=yaxis=-0.5:dx:0.5
 plot(
-heatmap(a'; title = "x^3+y^3"),
-heatmap(lap_a'; title = "x^3+y^3 laplacian"),
-# vector_field_plot(.1del_a,grid,title = "x^3+y^3 gradient" ),
-layout=2)
+    heatmap(xaxis,yaxis,a'; title="x^3+y^3"),
+    heatmap(xaxis,yaxis,lap_a'; title="x^3+y^3 laplacian"),
+    # vector_field_plot(.1del_a,grid,title = "x^3+y^3 gradient" ),
+    layout=2)

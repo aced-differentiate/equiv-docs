@@ -104,8 +104,10 @@ g = Grid((dx, dy))
 a = [x^2 + y^2 for x in 0:dx:0.5, y in 0:dy:0.5]
 a[g, 0.25, 0.25]
 # 0.13
-
-# alternatively the example array can be made using a bounded grid and its coordinate fields
+```
+## coordinate retrieval
+```
+# alternatively the previous example array can be made using a bounded grid and its coordinate fields
 R = 0.5
 g = Grid((dx, dy), R)
 a = g.x.^2 + g.y.^2 # or g.r.^2

@@ -21,11 +21,15 @@ Equivariant linear operators are our building blocks. Equivariance means a rotat
 
 ## Publications
 
+Preprint outdated, releasing new version soon
 - [Preprint: Paul Shen, Michael Herbst, Venkat Viswanathan. Rotation Equivariant  Operators for Machine Learning on Scalar Fields and Vector Fields. Arxiv. 2022.](https://arxiv.org/abs/2108.09541)
 
 ## Contributors
 
-Lead developer: Paul Shen (xingpins@andrew.cmu.edu), Michael Herbst (herbst@acom.rwth-aachen.de)  
+Lead developer: Paul Shen (pxshen@alumni.stanford.edu)
+
+Collaborators: Michael Herbst (herbst@acom.rwth-aachen.de)  
+
 PI: Venkat Viswanathan (venkatv@andrew.cmu.edu)
 
 In collaboration with Julia Computing

@@ -67,6 +67,9 @@ constructs equivariant operator
 `Op` constructs equivariant finite difference operators & custom Green's functions by specifying the radial function of the impulse response. Prebuilt operators like differential operators (`▽`) & common Green's functions can be constructed instead using `Del`, `Lap`.
 
 # Args
+- `radfunc`: radial function
+
+# Keywords
 - `l`: rotation order, `0` for scalar field, `1` for vector field
 
 # Example
@@ -147,12 +150,12 @@ grad_a = ▽(a)
 
 #=
 6×6 Matrix{SVector{2, Float64}}:
-[0.2, 0.2]  [0.2, 0.2]  [0.2, 0.4]  [0.2, 0.6]  [0.2, 0.8]  [0.2, 0.8]
- [0.2, 0.2]  [0.2, 0.2]  [0.2, 0.4]  [0.2, 0.6]  [0.2, 0.8]  [0.2, 0.8]
+[0.0, 0.0]  [0.0, 0.2]  [0.2, 0.4]  [0.2, 0.6]  [0.2, 0.8]  [0.2, 0.8]
+ [0.2, 0.0]  [0.2, 0.2]  [0.2, 0.4]  [0.2, 0.6]  [0.2, 0.8]  [0.2, 0.8]
  [0.4, 0.2]  [0.4, 0.2]  [0.4, 0.4]  [0.4, 0.6]  [0.4, 0.8]  [0.4, 0.8]
  [0.6, 0.2]  [0.6, 0.2]  [0.6, 0.4]  [0.6, 0.6]  [0.6, 0.8]  [0.6, 0.8]
- [0.8, 0.2]  [0.8, 0.2]  [0.8, 0.4]  [0.8, 0.6]  [0.8, 0.8]  [0.8, 0.8]
- [0.8, 0.2]  [0.8, 0.2]  [0.8, 0.4]  [0.8, 0.6]  [0.8, 0.8]  [0.8, 0.8]
+ [0.8, 0.2]  [0.8, 0.2]  [0.8, 0.4]  [0.8, 0.6]  [0.8, 0.8]  [0.8, 1.0]
+ [0.8, 0.2]  [0.8, 0.2]  [0.8, 0.4]  [0.8, 0.6]  [1.0, 0.8]  [1.0, 1.0]
 =#
 ``` 
 ## 2d divergence
