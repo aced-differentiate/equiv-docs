@@ -315,16 +315,16 @@ function rescale(a, s)
     @info "normalization error $er"
         a /sa * s
     end
-    using Interpolations
-    using DataStructures
-    function getr(a,c)
-        g=Grid(c,ones(ndims(a)),size(a))
-        d=SortedDict([k=>v for (k,v) in zip(g.r,a)])
-        it=LinearInterpolation(collect(keys(d)),collect(values(d)))
-        # it=CubicSplineInterpolation(vec(g.r),vec(a))
-        dr=g.dv^(1/ndims(a))/2
-        return [it[r] for r =0:dr:maximum(g.r)],dr
-    end
+#     using Interpolations
+#     using DataStructures
+#     function getr(a,c)
+#         g=Grid(c,ones(ndims(a)),size(a))
+#         d=SortedDict([k=>v for (k,v) in zip(g.r,a)])
+#         it=LinearInterpolation(collect(keys(d)),collect(values(d)))
+#         # it=CubicSplineInterpolation(vec(g.r),vec(a))
+#         dr=g.dv^(1/ndims(a))/2
+#         return [it[r] for r =0:dr:maximum(g.r)],dr
+#     end
     
 # function center(a)
 #   r=  1/sum(a)*sum(Iterators.product([
