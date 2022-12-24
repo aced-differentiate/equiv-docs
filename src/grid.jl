@@ -171,7 +171,7 @@ function Base.getindex(a::AbstractArray,tree::KDTree,points...)
 end
 function Base.getindex(a::AbstractArray,tree::KDTree,points::AbstractArray)
     k=size(points,1)+1
-    idxs, dists=knn(tree, points, k, sortres = false) 
+    idxs, dists=knn(tree, points, k) 
     w=1 ./dists
     w=w/sum(w)
     sum(a[idxs].*w)
