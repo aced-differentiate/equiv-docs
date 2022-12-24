@@ -1,7 +1,7 @@
 using Functors
 using UnPack
 using StaticArrays
-
+using NearestNeighbors
 function harmonics(r::AbstractArray{T}, l) where {T<:Complex}
     θ = l * angle.(r)
     @. complex(cos(θ), sin(θ))
@@ -166,6 +166,19 @@ end
 function Base.getindex(a::AbstractArray, g::Grid, args...)
     get(a, g, args)
 end
+function Base.getindex(a::AbstractArray,tree::KDTree,points...)
+    a[tree,points]
+end
+function Base.getindex(a::AbstractArray,tree::KDTree,points::AbstractArray)
+    k=size(points,1)+1
+    idxs, dists=knn(tree, points, k, sortres = false, skip = always_false) 
+    w=1 ./dists
+    w=w/sum(w)
+    sum(a[idxs].*w)
+end
+# function Base.getindex(a::AbstractArray, i...)
+#     a[Grid(ones(ndims(a))),i...,]
+# end
 
 
 function nearest(grid, rvec)
@@ -183,19 +196,36 @@ function nearest(grid, rvec)
         p in Iterators.product(fill(0:1, n)...)
         #  if ones(n) <= ixfloor .+p<=sz || error("interpolating out of bounds indices")
     ]
-        filter(t->t[2]>0,res)
+    filter(t -> t[2] > 0, res)
 end
 
 
 function Base.setindex!(a::AbstractArray, v, g::Grid, p...)
     place!(a, g, p, v)
 end
-    
-    function place!(a::AbstractArray, b::AbstractArray, g1::Grid,g2::Grid, p)
-        p.-=g2.origin.-1
-        for (i, w) in nearest(g1,p)
-            j=i.+size(b).-1
-        a[[i:j for (i,j) in zip(i,j)]...] .+=b.*w
+
+function place!(a::AbstractArray, g1::Grid, g2::Grid, p, b::AbstractArray, ; periodic=false)
+    p -= g2.cell * (g2.origin .- 1)
+    for (i, w) in nearest(g1, p)
+        j = i .+ size(b) .- 1
+        ia = max.(i, 1)
+        ja = min.(j, size(a))
+        ib = 1 .+ ia .- i
+        jb = size(b) .+ ja .- j
+        if periodic
+            l = Iterators.product([zip(sort(unique(vcat([1], reverse(i:-p:1), j+1:p:s, [s]))), sort(unique(vcat([1], reverse(i-1:-p:1), j:p:s, [s])))) for (i, j, p, s) in zip(ib, jb, size(a), size(b))])
+            # ir = getindex.(last(l), 1)
+            # jr = getindex.(first(l), 2)
+            for ijb in l
+                ija = map(zip(ijb, ib, jb, ia, ib, size(a))) do ((i, j), ib, jb, ia, ib, p)
+                    (ia + mod(i - ib, p), ja + mod(j - jb, p))
+
+                end
+                a[[ia:ja for (ia, ja) in ija]...] .+= b[[ib:jb for (ib, jb) in ijb]...] .* w
+            end
+        else
+            a[[ia:ja for (ia, ja) in zip(ia, ja)]...] .+= b[[ib:jb for (ib, jb) in zip(ib, jb)]...] .* w
+        end
     end
 end
 # function Base.place!(f, grid, p::AbstractMatrix, vals)

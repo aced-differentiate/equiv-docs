@@ -14,6 +14,7 @@ UnPack = "3a884ed6-31ef-47d7-9d2a-63182c4928ed"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 Memoize="c03570c3-d221-55d1-a50c-7939bbd78826"
 DSP = "717857b8-e6f2-59f4-9121-6e50c889abd2"
+NearestNeighbors="b8a86587-4115-5ab1-83bc-aa920d37bbce"
 
 [compat]
 FFTW = "1.5.0 - 10"
@@ -26,3 +27,4 @@ Zygote = "0.6.40"
 julia = "1.8, 1.9"
 Memoize="0.4.4"
 DSP = "0.7.5"
+NearestNeighbors="0.4.13"

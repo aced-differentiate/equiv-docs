@@ -24,9 +24,8 @@ end
 
 function makekernel(radfunc, rmin, rmax, l, grid;)
     @unpack cell, Y, r, dv, p = grid
-    n = size(cell, 1)
-    f = r -> rmin <= r <= rmax ? radfunc(r) : 0.0
-    rscalars = f.(r)
+    f = r -> rmin-1e-16 <= r <= rmax+1e-16 ? radfunc(r) : 0.0
+rscalars = f.(r)
     if l == 0
         return rscalars
     end
@@ -248,9 +247,9 @@ end
 
 constructs Gaussian diffusion operator with volume Normalized to 1 wrt grid support
 """
-function Gauss(a, σ, rmax; kw...)
+function Gauss(a, σ; rmax=2σ, kw...)
     cell=Grid(a).cell
-    radfunc = r -> exp(-r^2 / (2 * σ^2)) / sqrt(2π * σ^(2ndims(cell)))
+    radfunc = r -> exp(-r^2 / (2 * σ^2)) / sqrt((2π * σ^2)^size(cell,1))
     return Op(radfunc, rmax, cell; kw...)
 end
 
@@ -316,7 +315,17 @@ function rescale(a, s)
     @info "normalization error $er"
         a /sa * s
     end
-
+    using Interpolations
+    using DataStructures
+    function getr(a,c)
+        g=Grid(c,ones(ndims(a)),size(a))
+        d=SortedDict([k=>v for (k,v) in zip(g.r,a)])
+        it=LinearInterpolation(collect(keys(d)),collect(values(d)))
+        # it=CubicSplineInterpolation(vec(g.r),vec(a))
+        dr=g.dv^(1/ndims(a))/2
+        return [it[r] for r =0:dr:maximum(g.r)],dr
+    end
+    
 # function center(a)
 #   r=  1/sum(a)*sum(Iterators.product([
 #         1:n for n in size(a)

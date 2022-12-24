@@ -248,7 +248,9 @@ function dspconv(a::AbstractArray{T}, f::AbstractArray{T}; product=*, kw...) whe
     r = DSP.conv(a, f)
     convproc(r, size(a), size(f); kw...)
 end
-
+function dconv(a,b)
+    fft(a)./fft(b) |>ifft|>real
+end
 # function Δ(x, y)
 #     sum(abs.(x .- y)) / sum(abs.(y))
 # end
