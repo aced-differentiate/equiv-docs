@@ -253,6 +253,25 @@ function Gauss(a, σ; rmax=2σ, kw...)
     return Op(radfunc, rmax, cell; kw...)
 end
 
+function Ewald(a,sz; kw...)
+    cell=Grid(a).cell
+    n=size(cell,1)
+    g=Grid(cell,ones(n),sz)
+    kernel=zeros(sz)
+    for i in Iterators.product(fill(-1:0 ,n)...)
+        v=sum(i.*eachcol(cell))
+        kernel+=map(g.p) do x 
+            y=norm(x+v)
+            y==0 ? 0 : 1/y
+        end
+    end
+    kernel=fft(kernel)
+    cf=(x,f)->fft(x).*f|>ifft|>real
+    radfunc= rmin= rmax=nothing
+    l=0
+    Op(l, kernel, grid, cf, radfunc, rmin, rmax)
+end
+
 # convfunc_(x, f; kw...) = parent(padarray(
 #     convfunc(x, f; pad, kw...),
 #     Pad(:replicate, ones(Int, ndims(x))...),
