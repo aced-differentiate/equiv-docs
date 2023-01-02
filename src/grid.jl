@@ -166,23 +166,36 @@ end
 function Base.getindex(a::AbstractArray, g::Grid, args...)
     get(a, g, args)
 end
-function Base.getindex(a::AbstractArray,tree::KDTree,points...)
-    a[tree,points]
+function Base.getindex(a::AbstractArray, tree::KDTree, points...)
+    a[tree, points]
 end
-function Base.getindex(a::AbstractArray,tree::KDTree,points::AbstractArray)
-    k=size(points,1)+1
-    idxs, dists=knn(tree, points, k) 
-    w=1 ./dists
-    w=w/sum(w)
-    sum(a[idxs].*w)
+function Base.getindex(a::AbstractArray, tree::KDTree, points::Base.AbstractVecOrTuple)
+    k = size(points, 1) + 1
+    idxs, dists = knn(tree, points, k)
+    w = 1 ./ dists.+1e-12
+    w = w / sum(w)
+    sum([a[i...] for i in idxs] .* w)
+end
+function deform(a, v; periodic=false)
+    r = zeros(size(a))
+    for p in Iterators.product([1:n for n in size(a)]...)
+        for (i, w) in nearest(p .+ v[p...])
+            if !periodic
+                if all(1 .<= i .<= size(a))
+                    r[i...] += w * a[p...]
+                end
+            else
+            end
+        end
+    end
+    r
 end
 # function Base.getindex(a::AbstractArray, i...)
 #     a[Grid(ones(ndims(a))),i...,]
 # end
 
 
-function nearest(grid, rvec)
-    @unpack cell, origin = grid
+function nearest(cell, origin, rvec)
     n = length(origin)
     # sz = collect(size(grid))
     rvec = collect(rvec)
@@ -197,6 +210,16 @@ function nearest(grid, rvec)
         #  if ones(n) <= ixfloor .+p<=sz || error("interpolating out of bounds indices")
     ]
     filter(t -> t[2] > 0, res)
+end
+function nearest(rvec)
+    n=length(rvec)
+    cell =I(n)
+     origin = zeros(n)
+    nearest(cell, origin, rvec)
+end
+function nearest(grid::Grid, rvec)
+    @unpack cell, origin = grid
+    nearest(cell, origin, rvec)
 end
 
 
@@ -233,3 +256,10 @@ end
 #         place!(f, grid, rvec, val)
 #     end
 # end
+
+function red2cart(x,lattice)
+    reduce(hcat,[lattice*x for x in eachcol(x)])
+end
+function cart2red(x,lattice)
+    reduce(hcat,[lattice\x for x in eachcol(x)])
+end
